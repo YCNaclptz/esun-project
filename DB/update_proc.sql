@@ -1,14 +1,16 @@
-USE esun_db;
-DROP PROCEDURE IF EXISTS sp_InsertProduct;
+SET NAMES utf8mb4;
+
 DELIMITER //
+
+DROP PROCEDURE IF EXISTS sp_InsertProduct //
 CREATE PROCEDURE sp_InsertProduct(
     IN p_ProductID VARCHAR(50),
     IN p_ProductName VARCHAR(255),
-    IN p_Price DECIMAL(10,2),
+    IN p_Price DECIMAL(10, 2),
     IN p_Quantity INT
 )
 BEGIN
-    INSERT INTO Product(ProductID, ProductName, Price, Quantity)
+    INSERT INTO Product (ProductID, ProductName, Price, Quantity)
     VALUES (p_ProductID, p_ProductName, p_Price, p_Quantity);
 END //
 
@@ -16,7 +18,7 @@ DROP PROCEDURE IF EXISTS sp_InsertOrder //
 CREATE PROCEDURE sp_InsertOrder(
     IN p_OrderID VARCHAR(50),
     IN p_MemberID VARCHAR(50),
-    IN p_Price DECIMAL(10,2),
+    IN p_Price DECIMAL(10, 2),
     IN p_PayStatus TINYINT
 )
 BEGIN
@@ -87,15 +89,4 @@ BEGIN
     WHERE ProductID = p_ProductID;
 END //
 
-DROP PROCEDURE IF EXISTS sp_InsertProduct //
-CREATE PROCEDURE sp_InsertProduct(
-    IN p_ProductID VARCHAR(50),
-    IN p_ProductName VARCHAR(255),
-    IN p_Price DECIMAL(10, 2),
-    IN p_Quantity INT
-)
-BEGIN
-    INSERT INTO Product (ProductID, ProductName, Price, Quantity)
-    VALUES (p_ProductID, p_ProductName, p_Price, p_Quantity);
-END //
 DELIMITER ;
