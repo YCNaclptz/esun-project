@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 -- 匯入商品範例
 INSERT INTO Product (ProductID, ProductName, Price, Quantity) VALUES
 ('P001', 'osii舒壓按摩椅', 98000, 5),

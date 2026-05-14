@@ -15,123 +15,112 @@
 
 ```text
 esun-project/
-├── docker-compose.yml          # MySQL Docker 設定
+├── docker-compose.yml          # 前端、後端、MySQL Docker Compose 設定
 ├── DB/                         # SQL 初始化腳本與測試資料
-│   ├── product.sql             # Product 表與 sp_InsertProduct
+│   ├── Dockerfile              # 內建 SQL 初始化檔的 MySQL image
+│   ├── product.sql             # Product 表
 │   ├── order_main.sql          # Order_Main 表
 │   ├── order_detail.sql        # Order_Detail 表與外鍵
-│   ├── update_proc.sql         # 訂單與庫存相關預存程序
-│   └── db_test_data.sql        # 選用測試資料
+│   ├── update_proc.sql         # 商品、訂單與庫存相關預存程序
+│   └── db_test_data.sql        # 預設測試資料
 ├── eCommerce-backend/          # Spring Boot 後端 API
 └── eCommerce-frontend/         # Vue 3 前端
 ```
 
-## 安裝前準備
+## 快速開始
 
-請先確認本機已安裝以下工具：
+請先確認本機已安裝 Docker / Docker Compose。後端會在 Maven + Temurin JDK 21 容器中打包並使用 JRE 21 執行，前端會在 Node 22 容器中執行，因此本機不需要另外安裝 JDK、Node，或設定 `JAVA_HOME`。
 
-| 工具 | 建議版本 | 確認指令 |
-|------|----------|----------|
-| Docker / Docker Compose | 可執行 MySQL 8.0 容器即可 | `docker --version`、`docker compose version` |
-| Java | 21 | `java -version` |
-| Node.js | `^20.19.0` 或 `>=22.12.0` | `node -v` |
-| npm | 隨 Node.js 安裝 | `npm -v` |
-
-Windows 使用者建議先啟動 Docker Desktop，再執行以下指令。後端 Maven Wrapper 已包含在 `eCommerce-backend/`，不需要另外安裝 Maven。
-
-## 完整安裝與啟動流程
-
-### 1. 啟動 MySQL
-
-在專案根目錄執行：
+在專案根目錄先建立 `.env`，再啟動服務：
 
 ```bash
-docker-compose up -d
+cp .env.example .env
+docker compose up --build
 ```
 
-啟動後確認容器狀態：
+Compose 會啟動：
+
+| 服務 | URL / Port |
+|------|------------|
+| 前端 | http://127.0.0.1:5173 |
+| 後端 | http://127.0.0.1:8080 |
+| MySQL | 127.0.0.1:3306 |
+
+進入 `/login` 後輸入 5 位以下數字帳號即可登入。登入狀態只存在前端記憶體中，重新整理頁面後需要重新登入。
+
+## 環境變數
+
+`docker-compose.yml` 不提供 fallback 值，所有 compose 變數都必須由 `.env` 提供。可先複製範例檔，再依需要調整：
 
 ```bash
-docker ps --filter name=esun-mysql
+cp .env.example .env
 ```
 
-資料庫設定會與後端 `application.properties` 對應：
+可調整的變數：
 
-| 項目 | 值 |
-|------|----|
-| Host | `localhost` |
-| Port | `3306` |
-| Database | `esun_db` |
-| Username | `root` |
-| Password | `password123` |
+| 變數 | 範例值 | 說明 |
+|------|--------|------|
+| MYSQL_DATABASE | esun_db | MySQL database 名稱 |
+| MYSQL_ROOT_PASSWORD | password123 | MySQL root 密碼 |
+| SPRING_DATASOURCE_USERNAME | root | 後端連線 MySQL 使用者 |
+| MYSQL_PORT | 3306 | 對外 MySQL port |
+| BACKEND_PORT | 8080 | 對外後端 port |
+| FRONTEND_PORT | 5173 | 對外前端 port |
+| VITE_API_BASE_URL | http://127.0.0.1:8080 | 瀏覽器呼叫後端 API 的 base URL |
 
-### 2. 初始化資料庫
+## 資料庫初始化
 
-第一次啟動資料庫後，依序匯入 SQL。請在專案根目錄執行：
+首次建立 MySQL volume 時，Compose 會依序匯入：
+
+1. `DB/product.sql`
+2. `DB/order_main.sql`
+3. `DB/order_detail.sql`
+4. `DB/update_proc.sql`
+5. `DB/db_test_data.sql`
+
+SQL 匯入流程已固定使用 `utf8mb4`，可避免預設假資料在網頁中出現亂碼。
+
+若要重新建立資料庫並重跑初始化腳本：
 
 ```bash
-docker exec -i esun-mysql mysql -uroot -ppassword123 < DB/product.sql
-docker exec -i esun-mysql mysql -uroot -ppassword123 < DB/order_main.sql
-docker exec -i esun-mysql mysql -uroot -ppassword123 < DB/order_detail.sql
-docker exec -i esun-mysql mysql -uroot -ppassword123 < DB/update_proc.sql
+docker compose down -v
+docker compose up --build
 ```
 
-如果需要範例商品與訂單資料，再執行：
+## 本機直接執行（選用）
 
-```bash
-docker exec -i esun-mysql mysql -uroot -ppassword123 esun_db < DB/db_test_data.sql
-```
+如果仍想使用本機 JDK/Node，需先自行提供後端與前端環境變數。
 
-確認資料已建立：
+後端：
 
-```bash
-docker exec -it esun-mysql mysql -uroot -ppassword123 -e "USE esun_db; SHOW TABLES; SELECT * FROM Product;"
-```
-
-預期會看到 `Product`、`Order_Main`、`Order_Detail` 三張表；若有匯入測試資料，`Product` 會有商品資料。
-
-### 3. 啟動後端
-
-開啟另一個終端機，執行：
-
-```bash
+```powershell
 cd eCommerce-backend
+$env:SPRING_DATASOURCE_URL="jdbc:mysql://127.0.0.1:3306/esun_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Taipei&useUnicode=true&characterEncoding=utf8"
+$env:SPRING_DATASOURCE_USERNAME="root"
+$env:SPRING_DATASOURCE_PASSWORD="password123"
 ./mvnw spring-boot:run
 ```
 
-後端預設啟動於：
+前端：
 
-```text
-http://localhost:8080
-```
-
-確認 API 可連線：
-
-```bash
-curl http://localhost:8080/api/products
-```
-
-如果已匯入測試資料，應回傳商品 JSON；如果沒有匯入測試資料，回傳空陣列也代表後端與資料庫連線成功。
-
-### 4. 啟動前端
-
-開啟第三個終端機，執行：
-
-```bash
+```powershell
 cd eCommerce-frontend
+$env:VITE_API_BASE_URL="http://127.0.0.1:8080"
 npm install
 npm run dev
 ```
 
-前端預設啟動於：
-
-```text
-http://localhost:5173
-```
-
-進入 `/login` 後輸入 5 位以下數字帳號即可登入。登入狀態只存在前端記憶體中，重新整理頁面後需要重新登入。
-
 ## 常用開發指令
+
+### Docker Compose
+
+```bash
+docker compose up --build
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose down
+```
 
 ### 後端
 
@@ -157,14 +146,6 @@ npm run format
 `npm run lint` 會執行 `oxlint . --fix` 與 `eslint . --fix --cache`，可能會直接修改前端檔案。
 
 ## 資料庫與交易流程
-
-資料表初始化順序必須是：
-
-1. `DB/product.sql`
-2. `DB/order_main.sql`
-3. `DB/order_detail.sql`
-4. `DB/update_proc.sql`
-5. `DB/db_test_data.sql`，選用
 
 訂單建立不直接用 ORM 寫入多張表，而是透過 `sp_CreateOrderDetailAndReduceStock` 預存程序處理：
 
@@ -272,36 +253,29 @@ npm run format
 
 ### MySQL 3306 連線埠已被使用
 
-如果 `docker-compose up -d` 失敗並提示 port 已被使用，代表本機可能已有 MySQL 在使用 `3306`。請先停止本機 MySQL，或調整 `docker-compose.yml` 的對外 port，並同步更新後端 `application.properties`。
+如果 `docker compose up --build` 失敗並提示 port 已被使用，代表本機可能已有 MySQL 在使用 `3306`。可在 `.env` 調整 `MYSQL_PORT`。
 
-### SQL 匯入失敗或資料表已存在
+### 預設資料沒有重新匯入
 
-這些 SQL 腳本主要提供第一次初始化使用。若需要重建乾淨資料庫，可以先停止容器並移除資料目錄：
+MySQL 官方 image 只會在資料目錄是空的時候執行 `/docker-entrypoint-initdb.d`。若要重新匯入 schema 與測試資料，請移除 volume 後重啟：
 
 ```bash
-docker-compose down
-rm -rf db_data
-docker-compose up -d
+docker compose down -v
+docker compose up --build
 ```
-
-再重新執行資料庫初始化步驟。
 
 ### 後端啟動後無法連線資料庫
 
 請確認：
 
-1. `esun-mysql` 容器正在執行。
-2. `application.properties` 的帳號密碼與 `docker-compose.yml` 一致。
-3. 已執行 `DB/product.sql` 建立 `esun_db`。
+1. `esun-mysql` 容器正在執行且狀態為 healthy。
+2. `SPRING_DATASOURCE_URL` 使用 compose 內部主機名 `db`。
+3. `.env` 中的 `MYSQL_ROOT_PASSWORD` 與後端 `SPRING_DATASOURCE_PASSWORD` 一致。
 
 ### 前端顯示無法取得商品資料
 
-請確認後端已在 `http://localhost:8080` 啟動，並先用以下指令確認 API：
+請確認後端已在 `http://127.0.0.1:8080` 啟動，並先用以下指令確認 API：
 
 ```bash
-curl http://localhost:8080/api/products
+curl http://127.0.0.1:8080/api/products
 ```
-
-### Java 或 Node.js 版本不符
-
-後端需要 Java 21。前端 `package.json` 指定 Node.js `^20.19.0 || >=22.12.0`。版本不符時，請切換到相容版本後重新執行後端或 `npm install`。

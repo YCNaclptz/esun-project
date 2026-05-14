@@ -1,18 +1,58 @@
 # @format
 
-version: '3.8'
 services:
   db:
-    image: mysql:8.0
+    build:
+      context: ./DB
+    image: esun-mysql:dev
     container_name: esun-mysql
-    restart: always
+    restart: unless-stopped
     environment:
-      MYSQL_DATABASE: esun_db
-      MYSQL_ROOT_PASSWORD: password123
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?MYSQL_DATABASE must be set in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set in .env}
+      TZ: Asia/Taipei
     ports:
-      - '3306:3306'
+      - "${MYSQL_PORT:?MYSQL_PORT must be set in .env}:3306"
     volumes:
-      - db_data:/var/lib/mysql
+      - type: volume
+        source: mysql-data
+        target: /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./eCommerce-backend
+    image: esun-backend:dev
+    container_name: esun-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:?MYSQL_DATABASE must be set in .env}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Taipei&useUnicode=true&characterEncoding=utf8
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:?SPRING_DATASOURCE_USERNAME must be set in .env}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set in .env}
+    ports:
+      - "${BACKEND_PORT:?BACKEND_PORT must be set in .env}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./eCommerce-frontend
+    image: esun-frontend:dev
+    container_name: esun-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:?VITE_API_BASE_URL must be set in .env}
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "${FRONTEND_PORT:?FRONTEND_PORT must be set in .env}:5173"
+    depends_on:
+      - backend
 
 volumes:
-  db_data:
+  mysql-data:

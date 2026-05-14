@@ -1,9 +1,9 @@
 <script setup>
-import axios from 'axios'
 import { computed } from 'vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import api, { isAxiosError } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { useOrderStore } from '../stores/order'
 
@@ -45,7 +45,7 @@ const buildOrderPayload = () => ({
 })
 
 const resolveErrorMessage = (error) => {
-  if (axios.isAxiosError(error)) {
+  if (isAxiosError(error)) {
     const apiMessage = error.response?.data?.message
     if (typeof apiMessage === 'string' && apiMessage.length > 0) {
       return `建立訂單失敗：${apiMessage}`
@@ -65,7 +65,7 @@ const submitOrder = async () => {
   submitMessage.value = ''
 
   try {
-    const { data } = await axios.post('http://localhost:8080/api/orders', buildOrderPayload())
+    const { data } = await api.post('/api/orders', buildOrderPayload())
     orderStore.setOrderSummary(data)
     submitMessage.value = '訂單已建立成功。'
   } catch (error) {
