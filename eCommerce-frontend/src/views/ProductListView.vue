@@ -38,10 +38,10 @@
 </template>
 
 <script setup>
-import axios from 'axios'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import api from '../services/api'
 import { useOrderStore } from '../stores/order'
 
 const router = useRouter()
@@ -66,7 +66,7 @@ const loadProducts = async () => {
   loadError.value = ''
 
   try {
-    const { data } = await axios.get('http://localhost:8080/api/products')
+    const { data } = await api.get('/api/products')
     products.value = data.map(toProductViewModel)
   } catch {
     loadError.value = '無法取得商品資料，請確認後端服務是否已啟動。'

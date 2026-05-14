@@ -33,8 +33,9 @@
 </template>
 
 <script setup>
-import axios from 'axios'
 import { onMounted, reactive, ref } from 'vue'
+
+import api from '../services/api'
 
 const createInitialForm = () => ({
   productId: '',
@@ -76,7 +77,7 @@ const loadNextProductId = async () => {
   isLoadingProductId.value = true
 
   try {
-    const { data } = await axios.get('http://localhost:8080/api/products')
+    const { data } = await api.get('/api/products')
     form.productId = getNextProductId(Array.isArray(data) ? data : [])
   } catch {
     form.productId = ''
@@ -106,7 +107,7 @@ const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
-    await axios.post('http://localhost:8080/api/products', {
+    await api.post('/api/products', {
       productId: form.productId,
       productName: form.productName,
       price: Number(form.price),
