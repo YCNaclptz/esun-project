@@ -14,6 +14,83 @@ BEGIN
     VALUES (p_ProductID, p_ProductName, p_Price, p_Quantity);
 END //
 
+DROP PROCEDURE IF EXISTS sp_UpdateProductQuantity //
+CREATE PROCEDURE sp_UpdateProductQuantity(
+    IN p_ProductID VARCHAR(50),
+    IN p_Quantity INT
+)
+BEGIN
+    DECLARE v_CurrentStock INT DEFAULT NULL;
+    DECLARE v_ProductFound TINYINT DEFAULT 1;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_ProductFound = 0;
+
+    IF p_Quantity IS NULL OR p_Quantity < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MYSQL_ERRNO = 10003,
+            MESSAGE_TEXT = 'INVALID_QUANTITY';
+    END IF;
+
+    SELECT Quantity
+    INTO v_CurrentStock
+    FROM Product
+    WHERE ProductID = p_ProductID
+    FOR UPDATE;
+
+    IF v_ProductFound = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MYSQL_ERRNO = 10002,
+            MESSAGE_TEXT = 'PRODUCT_NOT_FOUND';
+    END IF;
+
+    UPDATE Product
+    SET Quantity = p_Quantity
+    WHERE ProductID = p_ProductID;
+END //
+
+DROP PROCEDURE IF EXISTS sp_AdjustProductQuantity //
+CREATE PROCEDURE sp_AdjustProductQuantity(
+    IN p_ProductID VARCHAR(50),
+    IN p_Delta INT
+)
+BEGIN
+    DECLARE v_CurrentStock INT DEFAULT NULL;
+    DECLARE v_NewQuantity INT DEFAULT NULL;
+    DECLARE v_ProductFound TINYINT DEFAULT 1;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_ProductFound = 0;
+
+    IF p_Delta IS NULL OR p_Delta = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MYSQL_ERRNO = 10003,
+            MESSAGE_TEXT = 'INVALID_QUANTITY';
+    END IF;
+
+    SELECT Quantity
+    INTO v_CurrentStock
+    FROM Product
+    WHERE ProductID = p_ProductID
+    FOR UPDATE;
+
+    IF v_ProductFound = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MYSQL_ERRNO = 10002,
+            MESSAGE_TEXT = 'PRODUCT_NOT_FOUND';
+    END IF;
+
+    SET v_NewQuantity = v_CurrentStock + p_Delta;
+
+    IF v_NewQuantity < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MYSQL_ERRNO = 10001,
+            MESSAGE_TEXT = 'INSUFFICIENT_STOCK';
+    END IF;
+
+    UPDATE Product
+    SET Quantity = v_NewQuantity
+    WHERE ProductID = p_ProductID;
+END //
+
 DROP PROCEDURE IF EXISTS sp_InsertOrder //
 CREATE PROCEDURE sp_InsertOrder(
     IN p_OrderID VARCHAR(50),

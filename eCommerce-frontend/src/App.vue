@@ -17,6 +17,7 @@ const menuItems = computed(() => {
   return [
     { label: '購買商品', to: '/products' },
     { label: '新增商品', to: '/products/new' },
+    { label: '庫存管理', to: '/inventory' },
   ]
 })
 

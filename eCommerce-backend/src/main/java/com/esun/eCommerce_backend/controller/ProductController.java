@@ -6,7 +6,6 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.esun.eCommerce_backend.dto.AdjustProductQuantityRequest;
 import com.esun.eCommerce_backend.dto.CreateProductRequest;
+import com.esun.eCommerce_backend.dto.UpdateProductQuantityRequest;
 import com.esun.eCommerce_backend.model.Product;
 import com.esun.eCommerce_backend.repository.ProductRepository;
 import com.esun.eCommerce_backend.service.ProductService;
@@ -54,5 +55,17 @@ public class ProductController {
 			.buildAndExpand(savedProduct.getProductId())
 			.toUri();
 		return ResponseEntity.created(location).body(savedProduct);
+	}
+
+	@PutMapping("/{productId}/quantity")
+	public ResponseEntity<Product> updateProductQuantity(@PathVariable String productId,
+			@Valid @RequestBody UpdateProductQuantityRequest request) {
+		return ResponseEntity.ok(productService.updateProductQuantity(productId, request));
+	}
+
+	@PostMapping("/{productId}/quantity-adjustments")
+	public ResponseEntity<Product> adjustProductQuantity(@PathVariable String productId,
+			@Valid @RequestBody AdjustProductQuantityRequest request) {
+		return ResponseEntity.ok(productService.adjustProductQuantity(productId, request));
 	}
 }

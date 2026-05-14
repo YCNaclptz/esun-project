@@ -1,6 +1,6 @@
 # eSun eCommerce 電商平台
 
-全端電商應用程式，提供會員登入、商品瀏覽與新增、購物車數量選擇、訂單建立，以及建立訂單時自動扣減庫存的流程。
+全端電商應用程式，提供會員登入、商品瀏覽與新增、庫存數量管理、購物車數量選擇、訂單建立，以及建立訂單時自動扣減庫存的流程。
 
 ## 技術架構
 
@@ -21,7 +21,7 @@ esun-project/
 │   ├── product.sql             # Product 表
 │   ├── order_main.sql          # Order_Main 表
 │   ├── order_detail.sql        # Order_Detail 表與外鍵
-│   ├── update_proc.sql         # 商品、訂單與庫存相關預存程序
+│   ├── update_proc.sql         # 商品、訂單與庫存查改相關預存程序
 │   └── db_test_data.sql        # 預設測試資料
 ├── eCommerce-backend/          # Spring Boot 後端 API
 └── eCommerce-frontend/         # Vue 3 前端
@@ -86,6 +86,8 @@ SQL 匯入流程已固定使用 `utf8mb4`，可避免預設假資料在網頁中
 docker compose down -v
 docker compose up --build
 ```
+
+若既有 MySQL volume 不重建，新增或更新庫存管理 API 前需手動重新套用 `DB/update_proc.sql`，讓 `sp_UpdateProductQuantity` 與 `sp_AdjustProductQuantity` 存在於資料庫中。
 
 ## 本機直接執行（選用）
 
@@ -170,6 +172,8 @@ npm run format
 | GET | `/api/products` | 取得所有商品 |
 | GET | `/api/products/{productId}` | 取得單一商品 |
 | POST | `/api/products` | 新增商品 |
+| PUT | `/api/products/{productId}/quantity` | 設定商品庫存總量 |
+| POST | `/api/products/{productId}/quantity-adjustments` | 增加或扣減商品庫存 |
 | POST | `/api/orders` | 建立訂單 |
 
 ### 新增商品 Request Body
@@ -184,6 +188,26 @@ npm run format
 ```
 
 `productId` 需符合 `P001` 這類格式。前端新增商品頁會讀取既有商品後自動產生下一個商品編號。
+
+### 設定商品庫存 Request Body
+
+```json
+{
+  "quantity": 12
+}
+```
+
+`quantity` 需為 `0` 以上整數，成功後回傳更新後的商品資料。
+
+### 調整商品庫存 Request Body
+
+```json
+{
+  "delta": -3
+}
+```
+
+`delta` 需為非 `0` 整數，正數會增加庫存，負數會扣減庫存。若扣減後庫存小於 `0`，後端會回傳 `409 Conflict`。
 
 ### 建立訂單 Request Body
 
@@ -238,12 +262,14 @@ npm run format
 | `/login` | 登入頁 | 輸入 5 位以下數字會員編號登入 |
 | `/products` | 商品列表 | 瀏覽商品、選擇數量、加入訂單 |
 | `/products/new` | 新增商品 | 建立新商品資料 |
+| `/inventory` | 庫存管理 | 逐筆設定商品庫存總量或增加/扣減庫存 |
 | `/orders/detail` | 訂單明細 | 確認訂單內容並送出 |
 
 ## 主要功能
 
 - 會員登入，帳號僅允許數字輸入。
 - 商品瀏覽與新增。
+- 逐筆設定商品庫存總量，或輸入正負調整量管理庫存。
 - 購買數量加減與庫存上限限制。
 - 訂單明細確認與建立。
 - 建立訂單時透過預存程序扣減庫存，避免庫存不一致。
