@@ -1,0 +1,1 @@
+DB/docker-entrypoint-initdb.d/*.sh text eol=lf

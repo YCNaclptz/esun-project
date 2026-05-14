@@ -1,3 +1,4 @@
+#!/bin/sh
 set -e
 
 mysql_utf8() {
