@@ -1,0 +1,82 @@
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor / IDE
+.idea/
+.vs/
+*.suo
+*.user
+*.userossc
+*.rsuser
+*.swp
+*.swo
+*~
+
+# Local AI / editor instructions
+copilot-instructions.md
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+coverage/
+.cache/
+.temp/
+tmp/
+temp/
+
+# Frontend framework caches
+.next/
+.nuxt/
+.svelte-kit/
+.parcel-cache/
+.turbo/
+.vite/
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# TypeScript
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Java / Kotlin
+.gradle/
+
+# .NET
+bin/
+obj/
+
+# Package manager stores
+.pnpm-store/
+.yarn/
+
